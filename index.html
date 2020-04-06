@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+body{
+    background: #000;
+}
+
+.car {
+    width: 12px;
+    height: 18px;
+    background: #ccc;
+    position: absolute;
+    margin-left: -6px;
+    margin-top: -9px;
+    left: 100px;
+    top: 100px;
+    transform: rotate(0deg);
+    /* transition: transform 1s; */
+}
+
+#board {
+    width: 600px;
+    height: 600px;
+    background: #aaa;
+    position: relative;
+    overflow: hidden;
+    zoom: 1.5;
+}
+.box {
+    width: 12px;
+    height: 12px;
+    border-radius: 100px;
+    background: black;
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
+.hud {
+    float:left;
+    width: 200px;
+    height: 48px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+h1, h4{
+    margin:0;
+    padding: 0;
+    display: inline-block;
+}
+h1{
+    padding-left: 10px;
+    padding-right: 5px;
+    font-size:40px;
+    line-height: 40px;
+}
+h4 {
+    vertical-align: top;;
+    font-size: 20px;
+    /* margin-top: -40px; */
+}
+main {
+    background: #aaa;
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    border: 10px solid #aaa;
+}
+
+#timer {
+    float:right;
+    height: 48px;
+    float:right;
+    padding: 10px;
+    background: green;
+    box-sizing: border-box;
+    font-size: 28px;
+}
+</style>
+</head>
+<body onkeydown="onkey(event)" onkeyup="onkey(event)">
+<main>
+    <div id="hud"><div id="timer">00:00.0</div></div>
+    <div id="board">
+        <canvas id="background"></canvas>
+        <div id="car"></div>
+    </div>
+    <div style="padding: 5px">Controls: Red: A/S/D; Blue: J/K/L</div>
+</main>
+<script>
+const BOARD = document.querySelector('#board');
+const KEYS = {};
+let ctx;
+const TOTAL_LAP = 1;
+
+class Player{
+    constructor(x, y, color, keys) {
+        this.color = color;
+        this.x = x; this.y = y;
+        this.angle = this.speed = 0.0;
+        this.maxSpeed = 120;
+        this.angleSpeed = 3.0;
+        this.breakingSpeed = 0.5;
+        this.accSpeed = 0.6;
+        this.keys = keys;
+
+        this.el = document.createElement('div');
+        this.el.className = 'car';
+        this.el.style.background = color;
+        BOARD.appendChild(this.el);
+
+        this.hud = document.createElement('div');
+        this.hud.className = 'hud';
+        this.hud.style.background = color;
+        this.hud.innerHTML = '<h1 class="lapCount">1</h1><h4 class="totalLap">/ 3</h4><h1 class="speed" style="margin-left: 10px;"></h1><h4>KMH</h4>';
+        document.querySelector('#hud').appendChild(this.hud);
+
+        this.zone = 0;
+        this.lapCount = 0;
+        this.hud.querySelector('.lapCount').innerHTML = this.lapCount+1;
+        this.hud.querySelector('.totalLap').innerHTML = '/ '+TOTAL_LAP;
+    }
+
+    update(FPS) {
+        let isBreaking = KEYS[this.keys.break];
+        let angAcc = (KEYS[this.keys.left] ? 1 : 0) + (KEYS[this.keys.right] ? -1 : 0);
+
+        if(this.collision())
+            this.speed = 0.0;
+        else
+            this.speed = Math.max(0, Math.min(1, this.speed + (isBreaking ? -this.breakingSpeed : this.accSpeed) / FPS));
+        
+        let speed = (this.speed * this.maxSpeed) / FPS;
+
+        this.angle += angAcc * this.angleSpeed / FPS;// * speed;
+        this.x += speed * Math.sin(this.angle);
+        this.y += speed * Math.cos(this.angle);
+
+        this.el.style.left = this.x + 'px';
+        this.el.style.top = this.y + 'px';
+        this.el.style.transform = 'rotate('+(-180*this.angle/Math.PI)+'deg)';
+
+        
+        this.hud.querySelector('.speed').innerHTML = Math.floor((this.speed * this.maxSpeed));
+        // this.hud.innerText = `zone: ${this.zone}; lap: ${this.lapCount}/3`;
+    }
+
+    checkZone(pixel) {
+        return (pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0 && pixel[3] == ((this.zone%9)+1));
+    }
+
+    collision() {
+        let fv = {x: 9*Math.sin(this.angle), y: 9*Math.cos(this.angle)}
+        let fr = {x: 6*Math.sin(this.angle + 0.5*Math.PI), y: 6*Math.cos(this.angle + 0.5*Math.PI)}
+
+        let x = this.x +  + 6 * Math.sin(this.angle+0.5*Math.PI);
+        let y = this.y + 9*Math.cos(this.angle) + 6 * Math.cos(this.angle + 0.5*Math.PI);
+
+        let pixel1 = ctx.getImageData(this.x+fv.x+fr.x, this.y+fv.y+fr.y, 1, 1).data;
+        let pixel2 = ctx.getImageData(this.x+fv.x-fr.x, this.y+fv.y-fr.y, 1, 1).data;
+
+        if(this.checkZone(pixel1) || this.checkZone(pixel2)) {
+            if(this.zone == 9)
+                this.lapCount += 1;
+            this.zone = (this.zone%9) + 1;
+            this.hud.querySelector('.lapCount').innerHTML = this.lapCount+1;
+            this.hud.querySelector('.totalLap').innerHTML = '/ '+TOTAL_LAP;
+        }
+
+        return (pixel1[3] > 250) || (pixel2[3] > 250);
+    }
+}
+
+let players = [
+    new Player(60, 110, 'red', {left: 'KeyA', right: 'KeyD', break: 'KeyS'}),
+    new Player(80, 100, 'blue', {left: 'KeyJ', right: 'KeyL', break: 'KeyK'}),
+];
+
+let lastTimestamp, firstTimestamp;
+const timer = document.querySelector('#timer');
+
+function update(timestamp) {
+    if(lastTimestamp) {
+        let FPS = 1000.0 / (timestamp - lastTimestamp);
+        for(let player of players) 
+            player.update(FPS);
+    } else
+        firstTimestamp = timestamp;
+
+    lastTimestamp = timestamp;
+    let time = parseInt((timestamp - firstTimestamp)/100);
+    let ms = time % 10, s = ''+(parseInt(time /10)%60), m = ''+parseInt(time/600);
+    time = `${m.padStart(2,'0')}:${s.padStart(2,'0')}.${ms}`;
+    timer.innerHTML = time;
+    for(let player of players)
+        if(player.lapCount >= TOTAL_LAP) {
+            alert(`Player ${player.color} win in ${time}`);
+            return ;
+        }
+
+    window.requestAnimationFrame(update);
+}
+
+function onkey(event) {
+    if(event.type == 'keyup')
+        KEYS[event.code] = false;
+    else if (event.type == 'keydown')
+        KEYS[event.code] = true;
+}
+
+window.requestAnimationFrame(update);
+let mapa = `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+OOOOOOOOOOOOOOOOOOOOOOOOO..6..OO
+OOOOOO....9.......OOOOOO...6...O
+OOOO......9........OOOOO...6...O
+OOO.......9.........OOOO...O...O
+OO.......OOOOOOO.....OOO...O...O
+OO......OO......O....OOO...O...O
+O......OO........O888OOO...O...O
+O......OO........O...OOO...O...O
+O......OO...OO...O...OOO...O...O
+O......OO...OO...O...OOO...O...O
+OO1111OOO...OO...O....OO...O...O
+O......OO...OO...O.....7...O...O
+O......OO444OO....O....7...O...O
+O......OO...OO.....O...7..OO...O
+O......OO....OO.....O..7.OOO...O
+O.......OO....OO.....OOOOOO....O
+O..OO....OO....OO.......5......O
+O..OOO....OO...OOO......5......O
+O..OOOO...OO...OOOO.....5.....OO
+O..OOOO...OO...OOOOOOOOOOOOOOOOO
+O..OOO....O....OOO............OO
+O..OO....O....OOO..............O
+O.......O....OOO...............O
+O......OO..........OOOOOOOO....O
+O222222OO.........OOOOOOOOOO333O
+O......OOO.......OOOOOOOOOOO...O
+O.......OOOOOOOOOOOOOOOOOOO....O
+O..............................O
+OO.............................O
+OOO...........................OO
+OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO`.split("\n");
+
+(function create_map(mapa) {
+    let back = document.querySelector('#background');
+    back.width = 16 * mapa[0].length;
+    board.style.width = (16 * mapa[0].length) + 'px';
+
+    back.height = 16 * mapa.length;
+    board.style.height = (16 * mapa.length) + 'px';
+    
+    ctx = back.getContext('2d');
+    
+    for(let y=0;y<mapa.length;y++)
+        for(let x=0;x<mapa[y].length;x++)
+            if(mapa[y][x] == 'O'){
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.ellipse(16*(x+0.5), 16*(y+0.5), 8, 8, 0, 0, 2*Math.PI);
+                ctx.fill();
+            } else if('1' <= mapa[y][x] && mapa[y][x] <= '9') {
+                ctx.fillStyle = '#0000000'+mapa[y][x];
+                ctx.fillRect(16*x, 16*y, 16, 16);
+            }
+})(mapa);
+</script>
+</body>
+
+<!-- "[[t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t],[t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,f,f,f,f,f,t,t],[t,t,t,t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,t,t,t,t,t,t,f,f,f,f,f,f,f,t],[t,t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t,t,t,t,t,f,f,f,f,f,f,f,t],[t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t,t,t,t,f,f,f,t,f,f,f,t],[t,t,f,f,f,f,f,f,f,t,t,t,t,t,t,t,f,f,f,f,f,t,t,t,f,f,f,t,f,f,f,t],[t,t,f,f,f,f,f,f,t,t,f,f,f,f,f,f,t,f,f,f,f,t,t,t,f,f,f,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,f,f,f,f,f,t,f,f,f,t,t,t,f,f,f,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,f,f,f,f,f,t,f,f,f,t,t,t,f,f,f,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,t,t,f,f,f,t,f,f,f,t,t,t,f,f,f,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,t,t,f,f,f,t,f,f,f,t,t,t,f,f,f,t,f,f,f,t],[t,t,f,f,f,f,t,t,t,f,f,f,t,t,f,f,f,t,f,f,f,f,t,t,f,f,f,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,t,t,f,f,f,t,f,f,f,f,f,f,f,f,f,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,t,t,f,f,f,f,t,f,f,f,f,f,f,f,f,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,t,t,f,f,f,f,f,t,f,f,f,f,f,f,t,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,f,t,t,f,f,f,f,f,t,f,f,f,f,t,t,t,f,f,f,t],[t,f,f,f,f,f,f,f,t,t,f,f,f,f,t,t,f,f,f,f,f,t,t,t,t,t,t,f,f,f,f,t],[t,f,f,t,t,f,f,f,f,t,t,f,f,f,f,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t],[t,f,f,t,t,t,f,f,f,f,t,t,f,f,f,t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,t],[t,f,f,t,t,t,t,f,f,f,t,t,f,f,f,t,t,t,t,f,f,f,f,f,f,f,f,f,f,f,t,t],[t,f,f,t,t,t,t,f,f,f,t,t,f,f,f,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t],[t,f,f,t,t,t,f,f,f,f,t,f,f,f,f,t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,t,t],[t,f,f,t,t,f,f,f,f,t,f,f,f,f,t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t],[t,f,f,f,f,f,f,f,t,f,f,f,f,t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,f,f,f,f,f,f,f,t,t,t,t,t,t,t,t,f,f,f,f,t],[t,f,f,f,f,f,f,t,t,f,f,f,f,f,f,f,f,f,t,t,t,t,t,t,t,t,t,t,f,f,f,t],[t,f,f,f,f,f,f,t,t,t,f,f,f,f,f,f,f,t,t,t,t,t,t,t,t,t,t,t,f,f,f,t],[t,f,f,f,f,f,f,f,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,f,f,f,f,t],[t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t],[t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t],[t,t,t,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,t,t],[t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t,t]]" -->

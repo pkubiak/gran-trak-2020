@@ -1,0 +1,70 @@
+<body onload="init()" style="background: black;">
+<canvas width="512" height="512" style="margin: 0 auto"></canvas>
+
+<script>
+const SIZE = 24;
+let ctx, MAP = [];
+
+function init() {
+	for(let y=0;y<32;y++) {
+		let row = new Array(32);
+		for(let x=0;x<32;x++)row[x] = false; //Math.random() < 0.3 ? true : false;
+		MAP.push(row);
+	}
+
+	let c = document.querySelector('canvas');
+	c.width = SIZE * 32;
+	c.height = SIZE * 32;
+	ctx = c.getContext('2d');
+	for(let y=0;y<32;y++)
+		for(let x=0;x<32;x++){
+			ctx.fillStyle = 'white';
+			ctx.fillRect(SIZE*x, SIZE * y, SIZE, SIZE);
+			ctx.fillStyle = 'black';
+			if(MAP[y][x]) {
+				ctx.beginPath();
+				ctx.ellipse(SIZE*(x+0.5), SIZE*(y+0.5), 8, 8, 0, 0, 2*Math.PI);
+				ctx.fill();
+			}
+		}
+
+	c.addEventListener('mousemove', mouse);
+	c.addEventListener('click', mouse);
+}
+
+let prevX, prevY;
+function mouse(event){
+//	console.log(event, event.type);
+	if(prevX !== undefined) {
+//		console.log(MAP.length, MAP[prevY].length);
+		ctx.fillStyle = 'white';
+		ctx.fillRect(SIZE * prevX, SIZE * prevY, SIZE, SIZE);
+		ctx.fillStyle = 'black';
+		if(MAP[prevY][prevX]){
+			ctx.beginPath();
+			ctx.ellipse(SIZE*(prevX+0.5), SIZE*(prevY+0.5), 8, 8, 0, 0, 2*Math.PI);
+			ctx.fill();
+		}
+	}
+	let x = Math.floor((event.layerX) / SIZE), y = Math.floor((event.layerY) / SIZE);
+	prevX = x; prevY = y;
+//  console.log(x, y)
+	if(event.type == 'click') 
+		MAP[y][x] = !MAP[y][x];
+	if(event.buttons == 1){
+		MAP[y][x] = !event.ctrlKey;
+//		console.log('click');
+	}
+	
+	ctx.fillStyle = 'yellow';
+	ctx.fillRect(SIZE * x, SIZE * y, SIZE, SIZE);
+	ctx.fillStyle = 'black';
+
+	if(MAP[y][x]) {
+		ctx.beginPath();
+		ctx.ellipse(SIZE*(x+0.5), SIZE*(y+0.5), 8, 8, 0, 0, 2*Math.PI);
+		ctx.fill();
+	}
+}
+</script>
+</body>
