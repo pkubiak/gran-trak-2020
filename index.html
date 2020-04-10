@@ -6,13 +6,16 @@
     <script src="https://browser.sentry-cdn.com/5.15.4/bundle.min.js" integrity="sha384-Nrg+xiw+qRl3grVrxJtWazjeZmUwoSt0FAVsbthlJ5OMpx0G08bqIq3b/v0hPjhB" crossorigin="anonymous"></script>
     <script>Sentry.init({ dsn: 'https://91b496a9a8c949f5ad0185a5ac5ab015@o370333.ingest.sentry.io/5196153' });</script>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
     <script src="main.js?2"></script>
+    <script src="tracks/00.js"></script>
+    <script src="tracks/01.js"></script>
 </head>
 <body onkeydown="onkey(event)" onkeyup="onkey(event)" onresize="onresize()" onload="oninit()">
     <main>
         <div id="hud">
             <div id="timer">00:00.0</div>
-            <button onclick="openFullscreen()">FullScreen</button>
+            <button onclick="openFullscreen()">Switch FullScreen</button>
         </div>
         <div id="board">
             <canvas id="background"></canvas>
@@ -20,4 +23,7 @@
         </div>
         <div style="padding: 5px">Controls: Red: A/S/D; Blue: J/K/L</div>
     </main>
+
+
 </body>
+</html>

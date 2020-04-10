@@ -24,6 +24,13 @@ body{
     text-align: center;
     line-height: 18px;
 }
+.car::before {
+    font-size: 12px !important;
+    line-height: 18px;
+    text-align: center;
+    width: 12px;
+    height: 18px;
+}
 
 #board {
     width: 600px;
