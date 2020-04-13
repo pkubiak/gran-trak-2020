@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
+	<link rel="stylesheet" href="style.css" />
+	<script src="main.js"></script>
+</head>
+<body onload="oninit()">
+<main>
+<div id="left">
+	<canvas width="0" height="0"></canvas>
+</div>
+<div id="right" class="bg-primary">
+	<section>
+		<div class="d-flex justify-content-between">
+			<button class="btn btn-sm btn-success" readonly>
+				Current tool: <span data-bind="tool"></span>
+			</button>
+
+			<div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
+				<button type="button" class="btn btn-secondary" disabled><i class="fas fa-chevron-left"></i> Undo</button>
+				<button type="button" class="btn btn-secondary" disabled>Redo <i class="fas fa-chevron-right"></i></button>
+			</div>
+		</div>
+		<div class="mt-1">
+			Draw:
+			<div class="btn-group btn-group-sm" role="group" id="tools">
+				<button type="button" class="btn btn-secondary" data-bind="tool" value="track">Track</button>
+				<button type="button" class="btn btn-secondary" data-bind="tool" value="eraser">Erase</button>
+				<button type="button" class="btn btn-secondary" data-bind="tool" value="line">Line</button>
+				<button type="button" class="btn btn-secondary" data-bind="tool" value="circle">Circle</button>
+				<button type="button" class="btn btn-secondary" data-bind="tool" value="rectangle" disabled>Rectangle</button>
+			</div>
+		</div>
+	</section>
+	<details open>
+		<summary>Map info</summary>
+		<section>
+			<div class="form-group row mb-0">
+				<label for="trackShape" class="col-sm-6 col-form-label">Width / Height:</label>
+				<div class="col-sm-6 p-2">
+					<span data-bind="track.width"></span> x <span data-bind="track.height"></span>
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="col-md-7 mb-3">
+					<label>Track Name:</label>
+					<input type="text" class="form-control form-control-sm" data-bind="meta.name" />
+				</div>
+				<div class="col-md-5 mb-3">
+					<label>Author:</label>
+					<input type="text" class="form-control form-control-sm" data-bind="meta.author">
+				</div>
+			</div>
+			
+			
+		</section>
+	</details>
+	<details open>
+		<summary>Map area</summary>
+		<section>
+			<div class="mb-2">
+				<button class="btn btn-sm btn-secondary" data-fn="autoShrink">Auto Shrink</button>
+				<button class="btn btn-sm btn-secondary" data-fn="clear">Clear</button>
+				<button class="btn btn-sm btn-secondary" data-fn="setPoint">Set Point</button>
+			</div>
+			
+			<hr/>
+			<div class="form-row">
+				<div class="col-md-6 mb-3">
+					<div class="grid-3x3">
+						<button class="btn btn-sm btn-secondary grid-2-1" value="left" data-fn="expand"><i class="fas fa-arrow-left"></i></button>
+						<button class="btn btn-sm btn-secondary grid-1-2" value="top" data-fn="expand"><i class="fas fa-arrow-up"></i></button>
+						<button class="btn btn-sm btn-secondary grid-3-2" value="bottom" data-fn="expand"><i class="fas fa-arrow-down"></i></button>
+						<button class="btn btn-sm btn-secondary grid-2-3" value="right" data-fn="expand"><i class="fas fa-arrow-right"></i></button>
+						<span class="grid-2-2">Expand</span>
+					</div>
+				</div>
+				<div class="col-md-6 mb-3">
+					<div class="grid-3x3">
+						<button class="btn btn-sm btn-secondary grid-2-1" value="left" data-fn="shrink"><i class="fas fa-arrow-right"></i></button>
+						<button class="btn btn-sm btn-secondary grid-1-2" value="top" data-fn="shrink"><i class="fas fa-arrow-down"></i></button>
+						<button class="btn btn-sm btn-secondary grid-3-2" value="bottom" data-fn="shrink"><i class="fas fa-arrow-up"></i></button>
+						<button class="btn btn-sm btn-secondary grid-2-3" value="right" data-fn="shrink"><i class="fas fa-arrow-left"></i></button>
+						<span class="grid-2-2">Shrink</span>
+					</div>
+				</div>
+			</div>
+		</section>
+	</details>
+
+	<details open>
+		<summary>Control Zones</summary>
+		<section>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone1">1</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone2">2</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone3">3</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone4">4</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone5">5</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone6">6</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone7">7</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone8">8</button>
+			<button class="btn btn-sm btn-secondary" data-bind="tool" value="zone9">9</button>
+		</section>
+	</details>
+	<details>
+		<summary>Start slots</summary>
+		<section>
+			<table>
+				<tr>
+					<td><input/></td>
+					<td><input/></td>
+					<td><input/></td>
+				</tr>
+			</table>
+			<button>Add new</button>
+		</section>
+	</details>
+	<details>
+		<summary>CPU paths</summary>
+		<section>
+			<!-- <p>Define CPU players move paths:</p> -->
+			<table class="table table-sm table-hover">
+				<tr>
+					<td>#1</td>
+					<td>
+						<button class="btn btn-sm btn-default">Show</button>
+						<button class="btn btn-sm btn-default">remove</button>
+					</td>
+				</tr>
+			</table>
+			<button type="button" class="btn btn-sm btn-primary">Add new</button>
+		</section>
+	</details>
+	<details open>
+		<summary>Storage</summary>
+		<section>
+			<button class="btn btn-sm btn-secondary" data-fn="exportToJSON">Export to JSON</button>
+			<button class="btn btn-sm btn-secondary" data-fn="importFromJSON" disabled>Import from JSON</button>
+			<button>Save to LocalStorage</button>
+			<button>Load from LocalStorage</button>
+		</section>
+	</details>
+	<footer class="text-center p-2">
+		<small>&copy; by pkubiak 2020; Gran Trak 2020 Map Editor</small>
+	</footer>
+</div>
+</main>
+
+
+<!-- <script>
+const SIZE = 24, WIDTH=48, HEIGHT=32;
+let ctx, MAP = [];
+
+function init() {
+	for(let y=0;y<HEIGHT;y++) {
+		let row = new Array(WIDTH);
+		for(let x=0;x<WIDTH;x++)row[x] = false; //Math.random() < 0.3 ? true : false;
+		MAP.push(row);
+	}
+
+	let c = document.querySelector('canvas');
+	c.width = SIZE * WIDTH;
+	c.height = SIZE * HEIGHT;
+	ctx = c.getContext('2d');
+	for(let y=0;y<HEIGHT;y++)
+		for(let x=0;x<WIDTH;x++){
+			ctx.fillStyle = 'white';
+			ctx.fillRect(SIZE*x, SIZE * y, SIZE, SIZE);
+			ctx.fillStyle = 'black';
+			if(MAP[y][x]) {
+				ctx.beginPath();
+				ctx.ellipse(SIZE*(x+0.5), SIZE*(y+0.5), 8, 8, 0, 0, 2*Math.PI);
+				ctx.fill();
+			}
+		}
+
+	c.addEventListener('mousemove', mouse);
+	c.addEventListener('dblclick', mouse);
+}
+
+let prevX, prevY;
+function mouse(event){
+	console.log(event, event.type);
+	if(prevX !== undefined) {
+//		console.log(MAP.length, MAP[prevY].length);
+		ctx.fillStyle = 'white';
+		ctx.fillRect(SIZE * prevX, SIZE * prevY, SIZE, SIZE);
+		ctx.fillStyle = 'black';
+		if(MAP[prevY][prevX]){
+			ctx.beginPath();
+			ctx.ellipse(SIZE*(prevX+0.5), SIZE*(prevY+0.5), 8, 8, 0, 0, 2*Math.PI);
+			ctx.fill();
+		}
+	}
+	let x = Math.floor((event.layerX) / SIZE), y = Math.floor((event.layerY) / SIZE);
+	prevX = x; prevY = y;
+//  console.log(x, y)
+	if(event.type == 'dblclick') 
+		MAP[y][x] = !MAP[y][x];
+	if(event.buttons == 1){
+		MAP[y][x] = !event.ctrlKey;
+//		console.log('click');
+	}
+	
+	ctx.fillStyle = 'yellow';
+	ctx.fillRect(SIZE * x, SIZE * y, SIZE, SIZE);
+	ctx.fillStyle = 'black';
+
+	if(MAP[y][x]) {
+		ctx.beginPath();
+		ctx.ellipse(SIZE*(x+0.5), SIZE*(y+0.5), 8, 8, 0, 0, 2*Math.PI);
+		ctx.fill();
+	}
+}
+</script> -->
+</body>
+</html>

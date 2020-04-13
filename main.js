@@ -11,14 +11,14 @@ function parse_hash() {
     return res;
 };
 
-const WIDTH = 48, HEIGHT=32;
+const WIDTH = 48, HEIGHT=32, SIZE=16;
 const ARGS = parse_hash();
 let BOARD, KEYS = {}, TRACKS = {};
 let ctx;
 const TOTAL_LAP = 1;
 
 class Player{
-    constructor(x, y, color, name, keys, replay) {
+    constructor(x, y, angle, color, name, keys, replay) {
         this.record = [];
         this.replay = [];
         if(replay)
@@ -26,7 +26,8 @@ class Player{
 
         this.color = color;
         this.x = x; this.y = y;
-        this.angle = this.speed = 0.0;
+        this.angle = angle;
+        this.speed = 0.0;
         this.maxSpeed = 120;
         this.angleSpeed = 3.0;
         this.breakingSpeed = 0.5;
@@ -202,25 +203,25 @@ function openFullscreen() {
 function oninit(){
     BOARD = document.querySelector('#board');
     TIMER = document.querySelector('#timer');
-    let track = TRACKS['Simple Track']
+    let track = TRACKS['Spiral Madness'];
     createMap(track.track);
     onresize();
     let recording = cpu ? track.replays[Math.floor(Math.random() * track.replays.length)] : undefined;
 
     PLAYERS = [
-        new Player(track.cars[0][0], track.cars[0][1], 'red', 'fab fa-apple', {left: 'KeyA', right: 'KeyD'}),
-        new Player(track.cars[1][0], track.cars[1][1], 'blue', 'fab fa-linux', {left: 'KeyJ', right: 'KeyL'}, replay=recording),
+        new Player(track.cars[0][0]*SIZE, track.cars[0][1]*SIZE, Math.PI*track.cars[0][2]/180, 'red', 'fab fa-apple', {left: 'KeyA', right: 'KeyD'}),
+        new Player(track.cars[1][0]*SIZE, track.cars[1][1]*SIZE, Math.PI*track.cars[1][2]/180, 'blue', 'fab fa-linux', {left: 'KeyJ', right: 'KeyL'}, replay=recording),
     ];
     window.requestAnimationFrame(update);
 }
 
 function createMap(mapa) {
-    mapa = mapa.trim().split("\n");
+    // mapa = mapa.trim().split("\n");
     let back = document.querySelector('#background');
-    back.width = 16 * mapa[0].length;
+    back.width = SIZE * mapa[0].length;
     board.style.width = (16 * mapa[0].length) + 'px';
 
-    back.height = 16 * mapa.length;
+    back.height = SIZE * mapa.length;
     board.style.height = (16 * mapa.length) + 'px';
     
     ctx = back.getContext('2d');
@@ -231,11 +232,11 @@ function createMap(mapa) {
             if(row[x] == 'O'){
                 ctx.fillStyle = 'black';
                 ctx.beginPath();
-                ctx.ellipse(16*(x+0.5), 16*(y+0.5), 8, 8, 0, 0, 2*Math.PI);
+                ctx.ellipse(SIZE*(x+0.5), SIZE*(y+0.5), 8, 8, 0, 0, 2*Math.PI);
                 ctx.fill();
             } else if('1' <= row[x] && row[x] <= '9') {
                 ctx.fillStyle = '#0000000'+row[x];
-                ctx.fillRect(16*x, 16*y, 16, 16);
+                ctx.fillRect(SIZE*x, SIZE*y, SIZE, SIZE);
             }
     }
 }
@@ -243,5 +244,5 @@ function createMap(mapa) {
 
 function initMap(track) {
     console.log('Loading', track.name);
-    TRACKS[track.name] = track;
+    TRACKS[track.meta.name] = track;
 }
